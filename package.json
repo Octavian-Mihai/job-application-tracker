@@ -6,7 +6,9 @@
     "dev:client": "npm run dev --prefix client",
     "dev": "concurrently -n server,client -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
     "migrate": "npm run migrate --prefix server",
-    "seed": "npm run seed --prefix server"
+    "seed": "npm run seed --prefix server",
+    "desktop": "npm start --prefix desktop",
+    "dist": "npm run dist --prefix desktop"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"

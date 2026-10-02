@@ -29,6 +29,23 @@ To start over, stop the server and delete `server/data/tracker.db`.
 
 Env vars: `PORT` (default 3001), `DB_PATH` (default `server/data/tracker.db`).
 
+## Desktop app (macOS)
+
+The same app packaged with Electron. The window runs the Express server on a random localhost-only port,
+so nothing is exposed to the network.
+
+```bash
+npm install --prefix desktop
+npm run dist        # builds client, packages, writes desktop/release/Internship Tracker-<version>-arm64.dmg
+npm run desktop     # or: run the desktop app without packaging
+```
+
+- Open the `.dmg`, drag **Internship Tracker** to Applications.
+- Data is stored in `~/Library/Application Support/Internship Tracker/tracker.db`. Back it up by copying that file.
+- Builds are signed with whatever Apple Development certificate is on your Mac, not notarized. On another Mac,
+  Gatekeeper will block it until you right-click → Open (or notarize with a paid Developer ID).
+- The dev setup (`npm run dev`) uses `server/data/tracker.db`, a separate database from the desktop app.
+
 ## API
 
 Base path `/api/applications`. Errors always look like `{ "error": { "message": "...", "details": { field: "..." } } }`.
@@ -60,6 +77,7 @@ server/src/
   validation/             # request validation
   controllers/, routes/   # thin HTTP layer
   middleware/             # error handling
+desktop/                  # Electron wrapper: main.js + packaging (copies server/ and client/dist)
 client/src/
   api/                    # fetch wrapper
   components/             # table, badges, chips, form, summary cards

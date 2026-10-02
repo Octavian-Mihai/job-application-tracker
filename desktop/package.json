@@ -1,0 +1,32 @@
+{
+  "name": "internship-tracker",
+  "productName": "Internship Tracker",
+  "version": "1.0.0",
+  "description": "Track internship applications. Desktop app.",
+  "author": "Octavian Mihai",
+  "private": true,
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "prepare-app": "node scripts/prepare.js",
+    "start": "npm run prepare-app && electron .",
+    "dist": "npm run prepare-app && electron-builder --mac dmg"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.0.0",
+    "express": "^5.0.0"
+  },
+  "devDependencies": {
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "com.octavianmihai.internshiptracker",
+    "productName": "Internship Tracker",
+    "directories": { "output": "release", "buildResources": "build" },
+    "files": ["main.js", "server/**/*", "client-dist/**/*", "package.json"],
+    "asarUnpack": ["**/*.node"],
+    "mac": { "category": "public.app-category.productivity", "icon": "build/icon.png", "target": ["dmg"] },
+    "dmg": { "title": "Internship Tracker ${version}" }
+  }
+}
