@@ -31,8 +31,14 @@ function Field({ label, error, required, children }) {
 
 const input = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-2 focus:outline-indigo-500';
 
-export default function ApplicationForm({ onSubmit, onCancel }) {
-  const [values, setValues] = useState(empty);
+/** Form values from an existing application (nulls become empty strings for inputs). */
+const fromApplication = (a) =>
+  Object.fromEntries(Object.keys(empty()).map((k) => [k, a[k] ?? '']));
+
+/** Pass `initial` (an application) to edit it; omit it to create a new one. */
+export default function ApplicationForm({ initial, onSubmit, onCancel }) {
+  const editing = Boolean(initial);
+  const [values, setValues] = useState(() => (initial ? fromApplication(initial) : empty()));
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
@@ -57,7 +63,7 @@ export default function ApplicationForm({ onSubmit, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-semibold">Add application</h2>
+      <h2 className="text-lg font-semibold">{editing ? `Edit ${initial.company}` : 'Add application'}</h2>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Company" required error={errors.company}>
           <input className={input} value={values.company} onChange={set('company')} autoFocus />

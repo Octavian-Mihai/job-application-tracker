@@ -5,7 +5,7 @@ function formatDate(iso) {
   return new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-export default function ApplicationTable({ applications, onStatusChange, onDelete, pendingIds }) {
+export default function ApplicationTable({ applications, onStatusChange, onEdit, onDelete, pendingIds }) {
   if (applications.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
@@ -44,6 +44,14 @@ export default function ApplicationTable({ applications, onStatusChange, onDelet
               <td className="px-4 py-3 text-slate-600">{a.resume_version || '–'}</td>
               <td className="px-4 py-3 whitespace-nowrap text-slate-600">{formatDate(a.date_applied)}</td>
               <td className="px-4 py-3 text-right">
+                <button
+                  type="button"
+                  onClick={() => onEdit(a)}
+                  className="mr-3 text-xs text-slate-500 hover:text-indigo-600"
+                  aria-label={`Edit ${a.company} application`}
+                >
+                  Edit
+                </button>
                 <button
                   type="button"
                   onClick={() => onDelete(a)}

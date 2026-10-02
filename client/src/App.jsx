@@ -9,7 +9,8 @@ export default function App() {
   const [applications, setApplications] = useState([]);
   const [stats, setStats] = useState(null);
   const [filter, setFilter] = useState('');
-  const [showForm, setShowForm] = useState(false);
+  // null = closed, 'new' = add form, or the application being edited
+  const [formTarget, setFormTarget] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [pendingIds, setPendingIds] = useState(new Set());
@@ -29,11 +30,12 @@ export default function App() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  async function handleCreate(values) {
-    // Send empty optional fields as null; server also normalizes.
+  async function handleSave(values) {
+    // Empty strings become null, which also lets an edit clear an optional field.
     const body = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, v === '' ? null : v]));
-    await api.createApplication(body);
-    setShowForm(false);
+    if (formTarget === 'new') await api.createApplication(body);
+    else await api.updateApplication(formTarget.id, body);
+    setFormTarget(null);
     await refresh();
   }
 
@@ -64,22 +66,29 @@ export default function App() {
     <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Internship Tracker</h1>
-        {!showForm && (
-          <button type="button" onClick={() => setShowForm(true)} className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+        {!formTarget && (
+          <button type="button" onClick={() => setFormTarget('new')} className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
             + Add application
           </button>
         )}
       </header>
 
       <SummaryCards stats={stats} />
-      {showForm && <ApplicationForm onSubmit={handleCreate} onCancel={() => setShowForm(false)} />}
+      {formTarget && (
+        <ApplicationForm
+          key={formTarget === 'new' ? 'new' : formTarget.id}
+          initial={formTarget === 'new' ? undefined : formTarget}
+          onSubmit={handleSave}
+          onCancel={() => setFormTarget(null)}
+        />
+      )}
       <FilterChips value={filter} onChange={setFilter} />
 
       {error && <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
       {loading ? (
         <p className="text-slate-500">Loading…</p>
       ) : (
-        <ApplicationTable applications={applications} onStatusChange={handleStatusChange} onDelete={handleDelete} pendingIds={pendingIds} />
+        <ApplicationTable applications={applications} onStatusChange={handleStatusChange} onEdit={(a) => { setFormTarget(a); window.scrollTo({ top: 0, behavior: 'smooth' }); }} onDelete={handleDelete} pendingIds={pendingIds} />
       )}
     </main>
   );
