@@ -95,3 +95,54 @@ Designed so later features are additive:
 - **Auth:** add `app.use('/api', requireAuth)` in `server/src/app.js`; add a `user_id` column via a new migration.
 - **Schema changes:** add `server/src/db/migrations/002_*.sql`; it's applied automatically on next start.
   Adding a status means a new migration (SQLite can't alter a CHECK, so rebuild the table) plus `constants/status.js`.
+
+## Architecture
+
+The same Express API serves the browser build in development and the Electron window in the desktop app.
+
+```mermaid
+flowchart LR
+    subgraph Client["client/ — React + Vite + Tailwind"]
+        App["App.jsx"]
+        Comp["components/<br/>SummaryCards · FilterChips<br/>ApplicationTable · ApplicationForm"]
+        Api["api/applications.js"]
+        App --> Comp --> Api
+    end
+    subgraph Server["server/src — Express"]
+        Routes["routes/"] --> Ctrl["controllers/"]
+        Ctrl --> Val["validation/"]
+        Ctrl --> Model["models/application.js<br/>all SQL · RESPONDED_STATUSES"]
+        Err["middleware/errorHandler"]
+        Model --> DB[("SQLite<br/>better-sqlite3 · migrations/*.sql")]
+    end
+    Desk["desktop/main.js<br/>Electron: random localhost port"]
+    Api -->|"/api/applications"| Routes
+    Ctrl -.-> Err
+    Desk -->|"starts"| Server
+    Desk -->|"loads client/dist"| Client
+```
+
+| Path | Purpose |
+|---|---|
+| `client/src/App.jsx` | Page state: list, filter and form |
+| `client/src/components/` | Summary cards, filter chips, table, form, status badge and select |
+| `client/src/api/applications.js` | Fetch wrapper for `/api/applications` |
+| `client/src/constants/status.js` | The status list shared by the UI |
+| `server/src/app.js`, `index.js`, `config.js` | Express app, startup, env (`PORT`, `DB_PATH`) |
+| `server/src/routes/`, `controllers/` | Thin HTTP layer |
+| `server/src/validation/application.js` | Request validation with per-field errors (422) |
+| `server/src/models/application.js` | Typedefs, every SQL statement, and `RESPONDED_STATUSES` |
+| `server/src/db/` | Connection, `migrate.js`, `migrations/*.sql`, `seed.js` |
+| `server/src/middleware/errorHandler.js` | Maps errors to the `{ error: { message, details } }` shape |
+| `desktop/` | Electron wrapper; `scripts/prepare.js` copies `server/` and `client/dist` for packaging |
+
+## Design patterns
+
+- **Layered server: route → controller → model.** Controllers stay thin; SQL lives only in the model.
+- **Validate, then persist.** Input is trimmed and checked before it reaches the model, and failures come back as one consistent
+  error body.
+- **Single definition of a business rule.** "Responded" is `RESPONDED_STATUSES` in one place; stats and the UI both depend on it.
+- **Versioned SQL migrations** applied on start, so a fresh install and an upgrade follow the same path.
+- **Same server, two shells.** The desktop build runs the unchanged Express app on a random localhost-only port instead of
+  re-implementing storage.
+- **Auth seam.** `app.js` is the one place middleware would be added if the app ever becomes multi-user.
